@@ -24,13 +24,13 @@ A modern, web-based graphical user interface for the QICK (Quantum Instrumentati
 1.  **Clone the repository**:
     ```bash
     git clone <repository_url>
-    cd inst_control
+    cd Qick_gui
     ```
 
 2.  **Create a Conda environment** (recommended):
     ```bash
-    conda create -n qick2env python=3.9
-    conda activate qick2env
+    conda create -n [envname]
+    conda activate [envname]
     ```
 
 3.  **Install dependencies**:
