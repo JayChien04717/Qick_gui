@@ -12,7 +12,6 @@ NAV_ITEMS = [
     ('Spin Echo', '/spinecho'),
     ('T1', '/t1'),
     ('Single Shot', '/singleshot'),
-    # ('QPT', '/qpt'),
 ]
 
 
@@ -39,14 +38,10 @@ def page_layout(app_state: Any, content_fn: Callable):
         # 中間：目前選到的 page 內容（可捲動）
         # ------------------------------
         with ui.column().classes("flex-1 h-full p-6 gap-4 overflow-y-auto bg-white"):
-            # 你如果還是想要中間上面有標題，可以加一行：
-            # ui.label('Quantum Lab GUI').classes('text-2xl font-bold')
-            # ui.separator()
-
             with ui.column().classes("gap-4"):
                 content_fn()
 
         # ------------------------------
-        # 右側：Experiment Config 欄（你原本的 sidebar）
+        # 右側：Experiment Config 欄
         # ------------------------------
         experiment_config_sidebar(app_state)
