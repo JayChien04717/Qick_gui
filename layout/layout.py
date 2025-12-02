@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import ui, app
 from typing import Callable, Any
 from .sidebar import experiment_config_sidebar
 
@@ -17,6 +17,10 @@ NAV_ITEMS = [
 
 
 def page_layout(app_state: Any, content_fn: Callable):
+    # Auth Check
+    if not app.storage.user.get('authenticated', False):
+        return ui.navigate.to('/login')
+
     with ui.row().classes("w-full h-screen no-wrap bg-gray-50"):
         # ------------------------------
         # 左側：實驗 Page 選單欄（很多 page 放這裡）
