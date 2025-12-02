@@ -12,12 +12,15 @@ def add_page(app_state):
     def login_page():
         def try_login():
 
+            print(f"Login attempt: {username.value}")
             user = next((u for u in USERS if u['account'] == username.value), None)
 
             if user and user['password'] == password.value:
+                print("Login successful")
                 app.storage.user['authenticated'] = True
                 ui.navigate.to('/')
             else:
+                print("Login failed")
                 ui.notify('Wrong username or password', color='negative')
 
         with ui.card().classes('absolute-center w-80 p-6 items-center'):

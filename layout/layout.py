@@ -12,13 +12,17 @@ NAV_ITEMS = [
     ('Spin Echo', '/spinecho'),
     ('T1', '/t1'),
     ('Single Shot', '/singleshot'),
+    # ('QPT', '/qpt'),
 ]
 
 
 def page_layout(app_state: Any, content_fn: Callable):
     # Auth Check
+    print(f"Checking auth: {app.storage.user}")
     if not app.storage.user.get('authenticated', False):
-        return ui.navigate.to('/login')
+        print("Not authenticated, redirecting to /login")
+        ui.navigate.to('/login')
+        return
 
     with ui.row().classes("w-full h-screen no-wrap bg-gray-50"):
         # ------------------------------
@@ -33,6 +37,14 @@ def page_layout(app_state: Any, content_fn: Callable):
                 ui.button(
                     label.upper(), on_click=lambda p=path: ui.navigate.to(p)
                 ).classes("w-full")
+
+            ui.separator()
+            
+            def logout():
+                app.storage.user['authenticated'] = False
+                ui.navigate.to('/login')
+                
+            ui.button("LOGOUT", on_click=logout, color="red").classes("w-full mt-auto")
 
         # ------------------------------
         # 中間：目前選到的 page 內容（可捲動）
