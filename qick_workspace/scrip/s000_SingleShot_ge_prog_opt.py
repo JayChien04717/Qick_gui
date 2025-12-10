@@ -917,7 +917,7 @@ class SingleShot_ge_opt:
         self.soccfg = soccfg
         self.cfg = config
 
-    def run(self, SHOTS, sweep_para: dict):
+    def run(self, SHOTS, sweep_para: dict, progress_callback=None):
         self.cfg["shots"] = SHOTS
 
         raw_length = sweep_para.get("length")
@@ -962,25 +962,29 @@ class SingleShot_ge_opt:
         elif is_f_sweep:
             outermost_real_sweep = "f"
 
+        # Calculate total iterations for progress
+        total_iterations = len(self.length_sweep) * len(self.gain_sweep) * len(self.freq_sweep)
+        current_iteration = 0
+
         # 1. 建立 L (最外層) 迭代器
         l_iter = self.length_sweep
-        if "l" == outermost_real_sweep:
+        if "l" == outermost_real_sweep and progress_callback is None:
             l_iter = tqdm(self.length_sweep, desc="Length loop")
 
         for l_idx, l_val in enumerate(l_iter):
             # --- 修正點：G 迭代器在 L 迴圈內建立 ---
             g_iter = self.gain_sweep
-            if "g" == outermost_real_sweep:
+            if "g" == outermost_real_sweep and progress_callback is None:
                 g_iter = tqdm(self.gain_sweep, desc="Gain loop")
-            elif is_g_sweep:
+            elif is_g_sweep and progress_callback is None:
                 g_iter = tqdm(self.gain_sweep, desc="Gain loop", leave=False)
 
             for g_idx, g_val in enumerate(g_iter):
                 # --- 修正點：F 迭代器在 G 迴圈內建立 ---
                 f_iter = self.freq_sweep
-                if "f" == outermost_real_sweep:
+                if "f" == outermost_real_sweep and progress_callback is None:
                     f_iter = tqdm(self.freq_sweep, desc="Freq loop")
-                elif is_f_sweep:
+                elif is_f_sweep and progress_callback is None:
                     f_iter = tqdm(self.freq_sweep, desc="Freq loop", leave=False)
 
                 for f_idx, f_val in enumerate(f_iter):
@@ -1019,6 +1023,11 @@ class SingleShot_ge_opt:
                     self.Q_g_array[l_idx, g_idx, f_idx, :] = Q_g
                     self.I_e_array[l_idx, g_idx, f_idx, :] = I_e
                     self.Q_e_array[l_idx, g_idx, f_idx, :] = Q_e
+                    
+                    # Update progress via callback
+                    current_iteration += 1
+                    if progress_callback is not None:
+                        progress_callback(current_iteration, total_iterations)
 
         self.data = {
             "Ig": self.I_g_array,

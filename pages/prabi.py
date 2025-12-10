@@ -1,4 +1,3 @@
-
 from nicegui import ui
 from layout.base_page import BaseMeasurementController, create_measurement_page
 from state.prabi_state import PowerRabiState
@@ -21,28 +20,72 @@ if TYPE_CHECKING:
 class PowerRabiController(BaseMeasurementController):
     """Encapsulates the measurement and plotting logic for the Power Rabi page."""
 
-    def __init__(self, app_state: 'AppState', prabi_state: PowerRabiState):
+    def __init__(self, app_state: "AppState", prabi_state: PowerRabiState):
         super().__init__(app_state, prabi_state)
 
     def prepare_config(self, current_cfg: Dict[str, Any]):
-        return prepare_config(
-            self.state, 
-            current_cfg, 
-            param_name="qb_gain_ge", 
-            sweep_type="gain"
+        config = prepare_config(
+            self.state, current_cfg, param_name="qb_gain_ge", sweep_type="gain"
         )
+        # Update config with UI state parameters
+        config["sigma"] = self.state.sigma
+        config["pulse_type"] = self.state.pulse_type
+        if self.state.pulse_type == "flat_top":
+            config["qb_flat_top_length_ge"] = self.state.flat_top_len
+        
+        # Sync sigma to global config and refresh sidebar
+        try:
+            if self.app_state.qick_cfg:
+                self.app_state.qick_cfg.update("qb.sigma", self.state.sigma, q_index=self.app_state.selected_qubit)
+                
+                # Reload config to update view_cfg
+                new_cfg = self.app_state.read_config(self.app_state.selected_qubit)
+                self.app_state.view_cfg = new_cfg
+                
+                # Refresh sidebar if available
+                if self.app_state.sidebar_refresh:
+                    self.app_state.sidebar_refresh()
+        except Exception as e:
+            print(f"Warning: Failed to sync sigma to sidebar: {e}")
+        
+        return config
 
     def update_result(self):
-        if self.state.fit_results and 'pi_gain' in self.state.fit_results and 'pi2_gain' in self.state.fit_results:
-            update_result(self.app_state, self.state.fit_results['pi_gain'], "qb.pi_gain_ge")
-            update_result(self.app_state, self.state.fit_results['pi2_gain'], "qb.pi2_gain_ge")  
+        if (
+            self.state.fit_results
+            and "pi_gain" in self.state.fit_results
+            and "pi2_gain" in self.state.fit_results
+        ):
+            update_result(
+                self.app_state, self.state.fit_results["pi_gain"], "qb.pi_gain_ge"
+            )
+            update_result(
+                self.app_state, self.state.fit_results["pi2_gain"], "qb.pi2_gain_ge"
+            )
+            
+            # Also update sigma to sidebar
+            try:
+                if self.app_state.qick_cfg:
+                    self.app_state.qick_cfg.update("qb.sigma_ge", self.state.sigma, q_index=self.app_state.selected_qubit)
+                    
+                    # Reload config to update view_cfg
+                    new_cfg = self.app_state.read_config(self.app_state.selected_qubit)
+                    self.app_state.view_cfg = new_cfg
+                    
+                    # Refresh sidebar if available
+                    if self.app_state.sidebar_refresh:
+                        self.app_state.sidebar_refresh()
+                        
+                    ui.notify(f"Updated sigma_ge to {self.state.sigma:.4f}", type="positive")
+            except Exception as e:
+                print(f"Warning: Failed to update sigma: {e}")
         else:
             ui.notify("No fit results available", type="warning")
 
     def update_fit_plot(self, gains, iq_data):
         if self.fit_plot_container is None:
             return
-        
+
         self.fit_plot_container.clear()
         if gains is None or iq_data is None or len(gains) != len(iq_data):
             return
@@ -52,28 +95,30 @@ class PowerRabiController(BaseMeasurementController):
                 with ui.matplotlib(figsize=(12, 6)).figure as fig:
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     title = f"Power Rabi Fit (Time: {timestamp})"
-                    
+
                     fit_params, error, _ = nicegui_plot_final(
-                        gains, 
-                        iq_data, 
-                        "Gain (a.u)", 
-                        fitdecaysin, 
+                        gains,
+                        iq_data,
+                        "Gain (a.u)",
+                        fitdecaysin,
                         decaysin,
                         fig=fig,
-                        title=title
+                        title=title,
                     )
-                    
+
                     pi_gain, pi2_gain = fix_phase(fit_params)
-                    
+
                     self.state.fit_results = {
-                        'pi_gain': pi_gain, 
-                        'pi2_gain': pi2_gain, 
-                        'params': fit_params, 
-                        'error': error
+                        "pi_gain": pi_gain,
+                        "pi2_gain": pi2_gain,
+                        "params": fit_params,
+                        "error": error,
                     }
-                    
-                    ui.label(f"Pi Gain: {pi_gain:.6f}, Pi/2 Gain: {pi2_gain:.6f}").classes("text-lg font-bold")
-                
+
+                    ui.label(
+                        f"Pi Gain: {pi_gain:.6f}, Pi/2 Gain: {pi2_gain:.6f}"
+                    ).classes("text-lg font-bold")
+
                 if self.update_button:
                     self.update_button.enable()
 
@@ -88,16 +133,17 @@ class PowerRabiController(BaseMeasurementController):
 
         if not self.app_state.instrument_connected:
             ui.notify("Not connected to QICK!", type="negative")
-            if self.run_button: self.run_button.enable()
+            if self.run_button:
+                self.run_button.enable()
             return
 
         soc = self.app_state.soc
         soccfg = self.app_state.soccfg
-        
+
         try:
             current_cfg = self.app_state.get_qubit(self.app_state.selected_qubit)
             config = self.prepare_config(current_cfg)
-            
+
             prog = AmplitudeRabiProgram(
                 soccfg,
                 reps=config["reps"],
@@ -110,14 +156,16 @@ class PowerRabiController(BaseMeasurementController):
         except Exception as e:
             ui.notify(f"Configuration Error: {e}", type="negative")
             print(f"Configuration Error: {e}")
-            if self.run_button: self.run_button.enable()
+            if self.run_button:
+                self.run_button.enable()
             return
-        
+
         # Prepare Live Plot
         if self.plot_container is None:
-            if self.run_button: self.run_button.enable()
+            if self.run_button:
+                self.run_button.enable()
             return
-        
+
         self.plot_container.clear()
         with self.plot_container:
             fig_element = ui.matplotlib(figsize=(9, 4))
@@ -135,7 +183,7 @@ class PowerRabiController(BaseMeasurementController):
                 ax.set_ylim(current_min * 0.95, current_max * 1.05)
             ax.set_title(f"Power Rabi Result (Avg: {avg_count})")
             fig_element.update()
-            
+
         def update_progress(current: int, total: int, remaining: float):
             percent = (current / total) * 100
             etr_text = f"{remaining:.1f}s" if remaining is not None else "?"
@@ -143,7 +191,7 @@ class PowerRabiController(BaseMeasurementController):
                 self.progress_info_label.text = f"{percent:.1f}% (ETR: {etr_text})"
             if self.progress_bar:
                 self.progress_bar.value = current / total
-            
+
         try:
             iq_data, interrupted = await nicegui_plot(
                 prog=prog,
@@ -152,11 +200,11 @@ class PowerRabiController(BaseMeasurementController):
                 plot_callback=plot_callback,
                 progress_callback=update_progress,
             )
-            
+
             if interrupted:
-                 ui.notify("Acquisition Interrupted!", type="warning")
+                ui.notify("Acquisition Interrupted!", type="warning")
             else:
-                 ui.notify("Acquisition Done!", type="positive")
+                ui.notify("Acquisition Done!", type="positive")
 
             # Save State
             self.state.gains = gains
@@ -169,7 +217,7 @@ class PowerRabiController(BaseMeasurementController):
             ui.notify(f"Error during acquisition: {str(e)}", type="negative")
             print(f"Power Rabi error: {e}")
             traceback.print_exc()
-        
+
         finally:
             self.on_measurement_finish()
 

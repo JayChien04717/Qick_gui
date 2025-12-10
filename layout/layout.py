@@ -12,6 +12,7 @@ NAV_ITEMS = [
     ('Spin Echo', '/spinecho'),
     ('T1', '/t1'),
     ('Single Shot', '/singleshot'),
+    ('SS Optimize', '/singleshot_opt'),
     # ('QPT', '/qpt'),
 ]
 

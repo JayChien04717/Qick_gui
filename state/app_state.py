@@ -10,6 +10,7 @@ from state.ramsey_state import RamseyState
 from state.spinecho_state import SpinEchoState
 from state.t1_state import T1State
 from state.singleshot_state import SingleshotState
+from state.singleshot_opt_state import SingleshotOptState
 
 
 @dataclass
@@ -38,6 +39,7 @@ class AppState:
     spinecho_state: SpinEchoState = field(default_factory=SpinEchoState)
     t1_state: T1State = field(default_factory=T1State)
     singleshot_state: SingleshotState = field(default_factory=SingleshotState)
+    singleshot_opt_state: SingleshotOptState = field(default_factory=SingleshotOptState)
     
     # ---- UI Callbacks ----
     sidebar_refresh: Optional[Callable] = None
