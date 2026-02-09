@@ -34,11 +34,28 @@ class TwoToneController(BaseMeasurementController):
             pass
 
     def prepare_config(self, current_cfg: Dict[str, Any]):
-        return prepare_config(
+        config = prepare_config(
             self.state, 
             current_cfg, 
             param_name="qb_freq_ge", 
         )
+        
+        # Sync gain to global config and refresh sidebar
+        try:
+            if self.app_state.qick_cfg:
+                self.app_state.qick_cfg.update("qb.gain", self.state.gain, q_index=self.app_state.selected_qubit)
+                
+                # Reload config to update view_cfg
+                new_cfg = self.app_state.read_config(self.app_state.selected_qubit)
+                self.app_state.view_cfg = new_cfg
+                
+                # Refresh sidebar if available
+                if self.app_state.sidebar_refresh:
+                    self.app_state.sidebar_refresh()
+        except Exception as e:
+            print(f"Warning: Failed to sync gain to sidebar: {e}")
+        
+        return config
 
     def update_result(self):
         if self.state.fit_results and 'fr' in self.state.fit_results:
