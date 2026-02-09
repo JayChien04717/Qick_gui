@@ -49,7 +49,6 @@ def experiment_config_sidebar(app_state):
 
                         ui.notify(f"Updated {full_key} to {value}", type="positive")
 
-                        # 更新本地视图
                         new_cfg = app_state.read_config(app_state.selected_qubit)
                         app_state.view_cfg = new_cfg
                     else:
