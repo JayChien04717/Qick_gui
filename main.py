@@ -9,7 +9,7 @@ Pyro4.config.SERIALIZER = "pickle"
 Pyro4.config.PICKLE_PROTOCOL_VERSION = 4
 
 def init_ngrok():
-    ngrok.set_auth_token("36GmTaQXU6v3oYZuKgv5v3hA0F4_WJQB2kESnnwQkfYQzrtG")
+    ngrok.set_auth_token("token")
     ngrok.kill()
     tunnel = ngrok.connect(8081, bind_tls=True)
     print(f"\n==============================================")
