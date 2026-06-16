@@ -1,7 +1,8 @@
 # QICK Instrument Control GUI
 
 A modern, web-based graphical user interface for the QICK (Quantum Instrumentation Control Kit) system, built with [NiceGUI](https://nicegui.io/).
-Toturial video [Demo]('https://www.youtube.com/watch?v=3nX1ZaTwDk8")
+
+Toturial video [Demo](https://www.youtube.com/watch?v=3nX1ZaTwDk8)
 
 ## Features
 
